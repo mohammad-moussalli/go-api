@@ -104,8 +104,8 @@ func getUserData(db *sql.DB, id int) {
 	}
 }
 
-func unblockFriend(db *sql.DB, sender int, receiver int) error {
-	_, err := db.Query("DELETE FROM blocks WHERE (sender = ? AND receiver = ?)", sender, receiver)
+func unblockFriend(db *sql.DB, id int, receiver int) error {
+	_, err := db.Query("DELETE FROM blocks WHERE (sender = ? AND receiver = ?)", id, receiver)
 
 	if err != nil {
 		panic(err.Error())
@@ -129,6 +129,15 @@ func searchForUsers(db *sql.DB, id int, first_name string, last_name string) {
 		}
 		fmt.Println(users.id, users.first_name, users.last_name)
 	}
+}
+
+func removeFriend(db *sql.DB, id int, user_id int) error {
+	_, err := db.Query("DELETE FROM friendships WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)", id, user_id, user_id, id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+	return nil
 }
 
 func main() {
@@ -165,5 +174,5 @@ func main() {
 
 	//unblockFriend(db, 143, 148)
 	//searchForUsers(db, 144, "Mohammad", "Badreddine")
-
+	//removeFriend(db, 143, 145)
 }
