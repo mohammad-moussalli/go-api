@@ -2,8 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -22,10 +24,10 @@ type users struct {
 }
 
 type posts struct {
-	post_id   int
-	post      string
-	user_id   int
-	timestamp *time.Time
+	Post_id   int
+	Post      string
+	User_id   int
+	Timestamp *time.Time
 }
 
 type likes struct {
@@ -55,14 +57,26 @@ type addresses struct {
 	street     string
 }
 
-func insertPost(db *sql.DB, p posts) error {
-	_, err := db.Query("INSERT INTO posts(post, user_id) VALUES (?, ?)", p.post, p.user_id)
+func insertPost(w http.ResponseWriter, r *http.Request) {
+
+	db, dbErr := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/facebookdb?parseTime=true")
+	if dbErr != nil {
+		panic(dbErr.Error())
+	}
+	defer db.Close()
+	var p posts
+	err := json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		// If the structure of the body is wrong, return an HTTP error
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	res, err := db.Query("INSERT INTO posts(post, user_id) VALUES (?, ?)", p.Post, p.User_id)
 
 	if err != nil {
-		log.Printf("Error %s when inserting row into products table", err)
-		return err
+		panic(err.Error())
 	}
-	return nil
+	fmt.Print(res)
 }
 
 func getPosts(db *sql.DB, id int) {
@@ -77,11 +91,11 @@ func getPosts(db *sql.DB, id int) {
 		var posts posts
 		var users users
 
-		err = res.Scan(&posts.post, &posts.timestamp, &posts.user_id, &users.first_name, &users.last_name, &users.picture)
+		err = res.Scan(&posts.Post, &posts.Timestamp, &posts.User_id, &users.first_name, &users.last_name, &users.picture)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture)
+		fmt.Println(posts.Post, posts.Timestamp, posts.User_id, users.first_name, users.last_name, users.picture)
 	}
 }
 
@@ -169,11 +183,11 @@ func getMyPosts(db *sql.DB, id int) {
 
 	for res.Next() {
 		var posts posts
-		err = res.Scan(&posts.post, &posts.timestamp)
+		err = res.Scan(&posts.Post, &posts.Timestamp)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(posts.post, posts.timestamp)
+		fmt.Println(posts.Post, posts.Timestamp)
 	}
 }
 
@@ -252,7 +266,7 @@ func getBlockedUsers(db *sql.DB, id int) {
 }
 
 func updateStatus(db *sql.DB, p posts, id int) error {
-	_, err := db.Query("UPDATE posts SET post=? WHERE post_id=? AND user_id=?", p.post, p.post_id, id)
+	_, err := db.Query("UPDATE posts SET post=? WHERE post_id=? AND user_id=?", p.Post, p.Post_id, id)
 
 	if err != nil {
 		log.Printf("Error %s when inserting picture into users table", err)
@@ -266,16 +280,16 @@ func main() {
 	// Open up our database connection.
 	// I've set up a database on my local machine using phpmyadmin.
 	// The database is called testDb
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/facebookdb?parseTime=true")
+	//db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/facebookdb?parseTime=true")
 
 	// if there is an error opening the connection, handle it
-	if err != nil {
-		panic(err.Error())
-	}
+	//if err != nil {
+	//	panic(err.Error())
+	//}
 
 	// defer the close till after the main function has finished
 	// executing
-	defer db.Close()
+	//defer db.Close()
 
 	//getPosts(db, 145)
 	//getUserData(db, 145)
@@ -299,4 +313,9 @@ func main() {
 	//getFriends(db, 143)
 	//getFriendRequests(db, 147)
 	//getBlockedUsers(db, 143)
+
+	http.HandleFunc("/insert-post", insertPost)
+	// start the server on port 8000
+	log.Fatal(http.ListenAndServe(":8000", nil))
+
 }
