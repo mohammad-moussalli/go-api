@@ -231,6 +231,25 @@ func getFriendRequests(db *sql.DB, id int) {
 		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
 	}
 }
+
+func getBlockedUsers(db *sql.DB, id int) {
+
+	res, err := db.Query("SELECT id, first_name, last_name, picture FROM users INNER JOIN blocks ON users.id = blocks.receiver WHERE blocks.sender = ?", id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for res.Next() {
+		var users users
+
+		err = res.Scan(&users.id, &users.first_name, &users.last_name, &users.picture)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
+	}
+}
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
@@ -269,4 +288,5 @@ func main() {
 	//getPostLikes(db, 253)
 	//getFriends(db, 143)
 	//getFriendRequests(db, 147)
+	getBlockedUsers(db, 143)
 }
