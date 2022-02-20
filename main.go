@@ -159,6 +159,24 @@ func insertPicture(db *sql.DB, u users, id int) error {
 	return nil
 }
 
+func getMyPosts(db *sql.DB, id int) {
+
+	res, err := db.Query("SELECT posts.post, posts.timestamp FROM posts WHERE posts.user_id = ?", id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for res.Next() {
+		var posts posts
+		err = res.Scan(&posts.post, &posts.timestamp)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println(posts.post, posts.timestamp)
+	}
+}
+
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
