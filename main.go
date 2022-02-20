@@ -177,6 +177,42 @@ func getMyPosts(db *sql.DB, id int) {
 	}
 }
 
+func getPostLikes(db *sql.DB, post_id int) {
+	res, err := db.Query("SELECT COUNT(like_id) FROM likes WHERE post_id = ?", post_id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for res.Next() {
+		var count int
+		err = res.Scan(&count)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println("Number of like are ", count)
+	}
+}
+
+func getFriends(db *sql.DB, id int) {
+
+	res, err := db.Query("SELECT DISTINCT posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture FROM posts JOIN users ON posts.user_id = users.id JOIN friendships ON (posts.user_id = friendships.sender OR posts.user_id = friendships.receiver) WHERE(friendships.sender = ? OR friendships.receiver = ?) AND friendships.accepted = 1 AND users.id NOT IN (SELECT blocks.receiver FROM blocks WHERE blocks.receiver = ? OR blocks.sender = ?) ORDER BY timestamp DESC;", id, id, id, id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for res.Next() {
+		var posts posts
+		var users users
+
+		err = res.Scan(&posts.post, &posts.timestamp, &posts.user_id, &users.first_name, &users.last_name, &users.picture)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println(posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture)
+	}
+}
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
@@ -212,4 +248,5 @@ func main() {
 	//unblockFriend(db, 143, 148)
 	//searchForUsers(db, 144, "Mohammad", "Badreddine")
 	//removeFriend(db, 143, 145)
+	//getPostLikes(db, 253)
 }
