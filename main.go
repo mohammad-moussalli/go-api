@@ -104,6 +104,34 @@ func getUserData(db *sql.DB, id int) {
 	}
 }
 
+func unblockFriend(db *sql.DB, sender int, receiver int) error {
+	_, err := db.Query("DELETE FROM blocks WHERE (sender = ? AND receiver = ?)", sender, receiver)
+
+	if err != nil {
+		panic(err.Error())
+	}
+	return nil
+}
+
+func searchForUsers(db *sql.DB, id int) {
+
+	res, err := db.Query("SELECT first_name, last_name, dob, email, picture, addresses.country, addresses.city, addresses.street FROM users JOIN addresses ON  users.address_id = addresses.address_id WHERE id = ?", id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for res.Next() {
+		var users users
+		var addresses addresses
+		err = res.Scan(&users.first_name, &users.last_name, &users.dob, &users.email, &users.picture, &addresses.country, &addresses.city, &addresses.street)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println(users.first_name, users.last_name, users.dob, users.email, users.picture, addresses.country, addresses.city, addresses.street)
+	}
+}
+
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
@@ -123,17 +151,19 @@ func main() {
 
 	//getPosts(db, 145)
 	//getUserData(db, 145)
-	p := posts{
-		post:    "ZEINAB",
-		user_id: 10,
-	}
+	//p := posts{
+	//	post:    "ZEINAB",
+	//	user_id: 10,
+	//}
 
 	// perform a db.Query insert
-	err = insertPost(db, p)
+	//err = insertPost(db, p)
 
 	// if there is an error inserting, handle it
-	if err != nil {
-		panic(err.Error())
-	}
+	//if err != nil {
+	//	panic(err.Error())
+	//}
+
+	//unblockFriend(db, 143, 148)
 
 }
