@@ -196,21 +196,20 @@ func getPostLikes(db *sql.DB, post_id int) {
 
 func getFriends(db *sql.DB, id int) {
 
-	res, err := db.Query("SELECT DISTINCT posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture FROM posts JOIN users ON posts.user_id = users.id JOIN friendships ON (posts.user_id = friendships.sender OR posts.user_id = friendships.receiver) WHERE(friendships.sender = ? OR friendships.receiver = ?) AND friendships.accepted = 1 AND users.id NOT IN (SELECT blocks.receiver FROM blocks WHERE blocks.receiver = ? OR blocks.sender = ?) ORDER BY timestamp DESC;", id, id, id, id)
+	res, err := db.Query("SELECT id, first_name, last_name, picture FROM users INNER JOIN friendships ON users.id = friendships.sender OR users.id = friendships.receiver LEFT JOIN blocks ON  users.id = blocks.receiver OR users.id = blocks.sender WHERE (friendships.sender = ? OR friendships.receiver = ?) AND friendships.accepted = 1 AND id != ? AND id NOT IN (SELECT blocks.sender FROM blocks WHERE blocks.receiver = ?) AND id NOT IN (SELECT blocks.receiver FROM blocks WHERE blocks.sender = ?)", id, id, id, id, id)
 
 	if err != nil {
 		panic(err.Error())
 	}
 
 	for res.Next() {
-		var posts posts
 		var users users
 
-		err = res.Scan(&posts.post, &posts.timestamp, &posts.user_id, &users.first_name, &users.last_name, &users.picture)
+		err = res.Scan(&users.id, &users.first_name, &users.last_name, &users.picture)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture)
+		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
 	}
 }
 func main() {
@@ -249,4 +248,5 @@ func main() {
 	//searchForUsers(db, 144, "Mohammad", "Badreddine")
 	//removeFriend(db, 143, 145)
 	//getPostLikes(db, 253)
+	//getFriends(db, 143)
 }
