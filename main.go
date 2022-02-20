@@ -113,9 +113,9 @@ func unblockFriend(db *sql.DB, sender int, receiver int) error {
 	return nil
 }
 
-func searchForUsers(db *sql.DB, id int) {
+func searchForUsers(db *sql.DB, id int, first_name string, last_name string) {
 
-	res, err := db.Query("SELECT first_name, last_name, dob, email, picture, addresses.country, addresses.city, addresses.street FROM users JOIN addresses ON  users.address_id = addresses.address_id WHERE id = ?", id)
+	res, err := db.Query("SELECT id, first_name, last_name FROM users WHERE id != ? AND (first_name = ? OR last_name = ?)", id, first_name, last_name)
 
 	if err != nil {
 		panic(err.Error())
@@ -123,12 +123,11 @@ func searchForUsers(db *sql.DB, id int) {
 
 	for res.Next() {
 		var users users
-		var addresses addresses
-		err = res.Scan(&users.first_name, &users.last_name, &users.dob, &users.email, &users.picture, &addresses.country, &addresses.city, &addresses.street)
+		err = res.Scan(&users.id, &users.first_name, &users.last_name)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(users.first_name, users.last_name, users.dob, users.email, users.picture, addresses.country, addresses.city, addresses.street)
+		fmt.Println(users.id, users.first_name, users.last_name)
 	}
 }
 
@@ -165,5 +164,6 @@ func main() {
 	//}
 
 	//unblockFriend(db, 143, 148)
+	//searchForUsers(db, 144, "Mohammad", "Badreddine")
 
 }
