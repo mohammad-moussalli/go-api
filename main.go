@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -140,6 +141,15 @@ func removeFriend(db *sql.DB, id int, user_id int) error {
 	return nil
 }
 
+func rejectRequest(db *sql.DB, id int, user_id int) error {
+	_, err := db.Query("DELETE FROM friendships WHERE sender = ? AND receiver = ?", id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+	return nil
+}
+
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
@@ -175,4 +185,8 @@ func main() {
 	//unblockFriend(db, 143, 148)
 	//searchForUsers(db, 144, "Mohammad", "Badreddine")
 	//removeFriend(db, 143, 145)
+
+	http.HandleFunc("/signin", signIn(db))
+	// start the server on port 8000
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
