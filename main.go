@@ -212,6 +212,25 @@ func getFriends(db *sql.DB, id int) {
 		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
 	}
 }
+
+func getFriendRequests(db *sql.DB, id int) {
+
+	res, err := db.Query("SELECT id, first_name, last_name, picture FROM users INNER JOIN friendships ON users.id = friendships.sender OR users.id = friendships.receiver WHERE friendships.receiver = ? AND friendships.accepted = 0 AND id != ?", id, id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for res.Next() {
+		var users users
+
+		err = res.Scan(&users.id, &users.first_name, &users.last_name, &users.picture)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
+	}
+}
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
@@ -249,4 +268,5 @@ func main() {
 	//removeFriend(db, 143, 145)
 	//getPostLikes(db, 253)
 	//getFriends(db, 143)
+	//getFriendRequests(db, 147)
 }
