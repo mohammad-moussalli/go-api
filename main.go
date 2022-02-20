@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -150,6 +149,16 @@ func rejectRequest(db *sql.DB, id int, user_id int) error {
 	return nil
 }
 
+func insertPicture(db *sql.DB, u users, id int) error {
+	_, err := db.Query("UPDATE users  SET picture=? WHERE users.id = ?", u.picture, id)
+
+	if err != nil {
+		log.Printf("Error %s when inserting picture into users table", err)
+		return err
+	}
+	return nil
+}
+
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
@@ -185,8 +194,4 @@ func main() {
 	//unblockFriend(db, 143, 148)
 	//searchForUsers(db, 144, "Mohammad", "Badreddine")
 	//removeFriend(db, 143, 145)
-
-	http.HandleFunc("/signin", signIn(db))
-	// start the server on port 8000
-	log.Fatal(http.ListenAndServe(":8000", nil))
 }
