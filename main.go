@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -57,27 +56,12 @@ type addresses struct {
 }
 
 func insertPost(db *sql.DB, p posts) error {
-	insert, err = db.Query("INSERT INTO posts(post, user_id) VALUES (?, ?)")
-	query := "INSERT INTO posts(post, user_id) VALUES (?, ?)"
-	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelfunc()
-	stmt, err := db.PrepareContext(ctx, query)
-	if err != nil {
-		log.Printf("Error %s when preparing SQL statement", err)
-		return err
-	}
-	defer stmt.Close()
-	res, err := stmt.ExecContext(ctx, p.post, p.user_id)
+	_, err := db.Query("INSERT INTO posts(post, user_id) VALUES (?, ?)", p.post, p.user_id)
+
 	if err != nil {
 		log.Printf("Error %s when inserting row into products table", err)
 		return err
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		log.Printf("Error %s when finding rows affected", err)
-		return err
-	}
-	log.Printf("%d post created ", rows)
 	return nil
 }
 
@@ -138,6 +122,18 @@ func main() {
 	defer db.Close()
 
 	//getPosts(db, 145)
-	getUserData(db, 145)
+	//getUserData(db, 145)
+	p := posts{
+		post:    "ZEINAB",
+		user_id: 10,
+	}
+
+	// perform a db.Query insert
+	err = insertPost(db, p)
+
+	// if there is an error inserting, handle it
+	if err != nil {
+		panic(err.Error())
+	}
 
 }
