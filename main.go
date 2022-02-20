@@ -57,6 +57,7 @@ type addresses struct {
 }
 
 func insertPost(db *sql.DB, p posts) error {
+	insert, err = db.Query("INSERT INTO posts(post, user_id) VALUES (?, ?)")
 	query := "INSERT INTO posts(post, user_id) VALUES (?, ?)"
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
@@ -100,6 +101,25 @@ func getPosts(db *sql.DB, id int) {
 	}
 }
 
+func getUserData(db *sql.DB, id int) {
+
+	res, err := db.Query("SELECT first_name, last_name, dob, email, picture, addresses.country, addresses.city, addresses.street FROM users JOIN addresses ON  users.address_id = addresses.address_id WHERE id = ?", id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for res.Next() {
+		var users users
+		var addresses addresses
+		err = res.Scan(&users.first_name, &users.last_name, &users.dob, &users.email, &users.picture, &addresses.country, &addresses.city, &addresses.street)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println(users.first_name, users.last_name, users.dob, users.email, users.picture, addresses.country, addresses.city, addresses.street)
+	}
+}
+
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
@@ -117,6 +137,7 @@ func main() {
 	// executing
 	defer db.Close()
 
-	getPosts(db, 145)
+	//getPosts(db, 145)
+	getUserData(db, 145)
 
 }
