@@ -250,6 +250,16 @@ func getBlockedUsers(db *sql.DB, id int) {
 		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
 	}
 }
+
+func updateStatus(db *sql.DB, p posts, id int) error {
+	_, err := db.Query("UPDATE posts SET post=? WHERE post_id=? AND user_id=?", p.post, p.post_id, id)
+
+	if err != nil {
+		log.Printf("Error %s when inserting picture into users table", err)
+		return err
+	}
+	return nil
+}
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
@@ -288,5 +298,5 @@ func main() {
 	//getPostLikes(db, 253)
 	//getFriends(db, 143)
 	//getFriendRequests(db, 147)
-	getBlockedUsers(db, 143)
+	//getBlockedUsers(db, 143)
 }
