@@ -135,22 +135,24 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := db.Query("SELECT DISTINCT posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture FROM posts JOIN users ON posts.user_id = users.id JOIN friendships ON (posts.user_id = friendships.sender OR posts.user_id = friendships.receiver) WHERE(friendships.sender = ? OR friendships.receiver = ?) AND friendships.accepted = 1 AND users.id NOT IN (SELECT blocks.receiver FROM blocks WHERE blocks.receiver = ? OR blocks.sender = ?) ORDER BY timestamp DESC;", u.Id, u.Id, u.Id, u.Id)
+	results, err := db.Query("SELECT DISTINCT posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture FROM posts JOIN users ON posts.user_id = users.id JOIN friendships ON (posts.user_id = friendships.sender OR posts.user_id = friendships.receiver) WHERE(friendships.sender = ? OR friendships.receiver = ?) AND friendships.accepted = 1 AND users.id NOT IN (SELECT blocks.receiver FROM blocks WHERE blocks.receiver = ? OR blocks.sender = ?) ORDER BY timestamp DESC;", u.Id, u.Id, u.Id, u.Id)
 
 	if err != nil {
 		panic(err.Error())
 	}
-
-	for res.Next() {
+	res := []posts{}
+	for results.Next() {
 		var posts posts
 		var users users
 
-		err = res.Scan(&posts.Post, &posts.Timestamp, &posts.User_id, &users.First_name, &users.Last_name, &users.Picture)
+		err = results.Scan(&posts.Post, &posts.Timestamp, &posts.User_id, &users.First_name, &users.Last_name, &users.Picture)
 		if err != nil {
-			panic(err.Error())
+			panic(err.Error()) // proper error handling instead of panic in your app
 		}
-		fmt.Println(posts.Post, posts.Timestamp, posts.User_id, users.First_name, users.Last_name, users.Picture)
+		res = append(res, posts)
 	}
+
+	json.NewEncoder(w).Encode(res)
 }
 
 func unblockFriend(db *sql.DB, id int, receiver int) error {
