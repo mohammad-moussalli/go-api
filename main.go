@@ -67,7 +67,6 @@ func insertPost(w http.ResponseWriter, r *http.Request) {
 	var p posts
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		// If the structure of the body is wrong, return an HTTP error
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -98,7 +97,6 @@ func getUserData(w http.ResponseWriter, r *http.Request) {
 	var u users
 	err := json.NewDecoder(r.Body).Decode(&u)
 	if err != nil {
-		// If the structure of the body is wrong, return an HTTP error
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -130,7 +128,6 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 	var u users
 	err := json.NewDecoder(r.Body).Decode(&u)
 	if err != nil {
-		// If the structure of the body is wrong, return an HTTP error
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -314,18 +311,12 @@ func updateStatus(db *sql.DB, p posts, id int) error {
 func main() {
 	fmt.Println("Go MySQL Tutorial")
 
-	// Open up our database connection.
-	// I've set up a database on my local machine using phpmyadmin.
-	// The database is called testDb
 	//db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/facebookdb?parseTime=true")
 
-	// if there is an error opening the connection, handle it
 	//if err != nil {
 	//	panic(err.Error())
 	//}
 
-	// defer the close till after the main function has finished
-	// executing
 	//defer db.Close()
 
 	//getPosts(db, 145)
