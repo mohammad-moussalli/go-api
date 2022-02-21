@@ -12,15 +12,15 @@ import (
 )
 
 type users struct {
-	id         int
-	first_name string
-	last_name  string
-	dob        string
-	email      string
-	password   string
-	picture    string
-	timestamp  time.Time
-	address_id int
+	Id         int
+	First_name string
+	Last_name  string
+	Dob        string
+	Email      string
+	Password   string
+	Picture    string
+	Timestamp  time.Time
+	Address_id int
 }
 
 type posts struct {
@@ -31,30 +31,30 @@ type posts struct {
 }
 
 type likes struct {
-	like_id int
-	user_id int
-	post_id int
+	Like_id int
+	User_id int
+	Post_id int
 }
 
 type friendships struct {
-	friendship_id int
-	sender        int
-	receiver      int
-	accepted      int
-	timestamp     time.Time
+	Friendship_id int
+	Sender        int
+	Receiver      int
+	Accepted      int
+	Timestamp     time.Time
 }
 
 type blocks struct {
-	block_id int
-	sender   int
-	receiver int
+	Block_id int
+	Sender   int
+	Receiver int
 }
 
 type addresses struct {
-	address_id int
-	country    string
-	city       string
-	street     string
+	Address_id int
+	Country    string
+	City       string
+	Street     string
 }
 
 func insertPost(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +79,38 @@ func insertPost(w http.ResponseWriter, r *http.Request) {
 	fmt.Print(res)
 }
 
+func getUserData(w http.ResponseWriter, r *http.Request) {
+	db, dbErr := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/facebookdb?parseTime=true")
+	if dbErr != nil {
+		panic(dbErr.Error())
+	}
+	defer db.Close()
+	var u users
+	err := json.NewDecoder(r.Body).Decode(&u)
+	if err != nil {
+		// If the structure of the body is wrong, return an HTTP error
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	results, err := db.Query("SELECT first_name, last_name, dob, email, picture, addresses.country, addresses.city, addresses.street FROM users JOIN addresses ON  users.address_id = addresses.address_id WHERE id = ?", u.Id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+	res := []users{}
+
+	for results.Next() {
+		var users users
+		var addresses addresses
+		err = results.Scan(&users.First_name, &users.Last_name, &users.Dob, &users.Email, &users.Picture, &addresses.Country, &addresses.City, &addresses.Street)
+		if err != nil {
+			panic(err.Error())
+		}
+		res = append(res, users)
+	}
+	json.NewEncoder(w).Encode(res)
+}
+
 func getPosts(db *sql.DB, id int) {
 
 	res, err := db.Query("SELECT DISTINCT posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture FROM posts JOIN users ON posts.user_id = users.id JOIN friendships ON (posts.user_id = friendships.sender OR posts.user_id = friendships.receiver) WHERE(friendships.sender = ? OR friendships.receiver = ?) AND friendships.accepted = 1 AND users.id NOT IN (SELECT blocks.receiver FROM blocks WHERE blocks.receiver = ? OR blocks.sender = ?) ORDER BY timestamp DESC;", id, id, id, id)
@@ -91,30 +123,11 @@ func getPosts(db *sql.DB, id int) {
 		var posts posts
 		var users users
 
-		err = res.Scan(&posts.Post, &posts.Timestamp, &posts.User_id, &users.first_name, &users.last_name, &users.picture)
+		err = res.Scan(&posts.Post, &posts.Timestamp, &posts.User_id, &users.First_name, &users.Last_name, &users.Picture)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(posts.Post, posts.Timestamp, posts.User_id, users.first_name, users.last_name, users.picture)
-	}
-}
-
-func getUserData(db *sql.DB, id int) {
-
-	res, err := db.Query("SELECT first_name, last_name, dob, email, picture, addresses.country, addresses.city, addresses.street FROM users JOIN addresses ON  users.address_id = addresses.address_id WHERE id = ?", id)
-
-	if err != nil {
-		panic(err.Error())
-	}
-
-	for res.Next() {
-		var users users
-		var addresses addresses
-		err = res.Scan(&users.first_name, &users.last_name, &users.dob, &users.email, &users.picture, &addresses.country, &addresses.city, &addresses.street)
-		if err != nil {
-			panic(err.Error())
-		}
-		fmt.Println(users.first_name, users.last_name, users.dob, users.email, users.picture, addresses.country, addresses.city, addresses.street)
+		fmt.Println(posts.Post, posts.Timestamp, posts.User_id, users.First_name, users.Last_name, users.Picture)
 	}
 }
 
@@ -137,11 +150,11 @@ func searchForUsers(db *sql.DB, id int, first_name string, last_name string) {
 
 	for res.Next() {
 		var users users
-		err = res.Scan(&users.id, &users.first_name, &users.last_name)
+		err = res.Scan(&users.Id, &users.First_name, &users.Last_name)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(users.id, users.first_name, users.last_name)
+		fmt.Println(users.Id, users.First_name, users.Last_name)
 	}
 }
 
@@ -164,7 +177,7 @@ func rejectRequest(db *sql.DB, id int, user_id int) error {
 }
 
 func insertPicture(db *sql.DB, u users, id int) error {
-	_, err := db.Query("UPDATE users  SET picture=? WHERE users.id = ?", u.picture, id)
+	_, err := db.Query("UPDATE users  SET picture=? WHERE users.id = ?", u.Picture, id)
 
 	if err != nil {
 		log.Printf("Error %s when inserting picture into users table", err)
@@ -219,11 +232,11 @@ func getFriends(db *sql.DB, id int) {
 	for res.Next() {
 		var users users
 
-		err = res.Scan(&users.id, &users.first_name, &users.last_name, &users.picture)
+		err = res.Scan(&users.Id, &users.First_name, &users.Last_name, &users.Picture)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
+		fmt.Println(users.Id, users.First_name, users.Last_name, users.Picture)
 	}
 }
 
@@ -238,11 +251,11 @@ func getFriendRequests(db *sql.DB, id int) {
 	for res.Next() {
 		var users users
 
-		err = res.Scan(&users.id, &users.first_name, &users.last_name, &users.picture)
+		err = res.Scan(&users.Id, &users.First_name, &users.Last_name, &users.Picture)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
+		fmt.Println(users.Id, users.First_name, users.Last_name, users.Picture)
 	}
 }
 
@@ -257,11 +270,11 @@ func getBlockedUsers(db *sql.DB, id int) {
 	for res.Next() {
 		var users users
 
-		err = res.Scan(&users.id, &users.first_name, &users.last_name, &users.picture)
+		err = res.Scan(&users.Id, &users.First_name, &users.Last_name, &users.Picture)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(users.id, users.first_name, users.last_name, users.picture)
+		fmt.Println(users.Id, users.First_name, users.Last_name, users.Picture)
 	}
 }
 
@@ -315,6 +328,8 @@ func main() {
 	//getBlockedUsers(db, 143)
 
 	http.HandleFunc("/insert-post", insertPost)
+	http.HandleFunc("/user-data", getUserData)
+
 	// start the server on port 8000
 	log.Fatal(http.ListenAndServe(":8000", nil))
 
