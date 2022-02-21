@@ -71,12 +71,22 @@ func insertPost(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	res, err := db.Query("INSERT INTO posts(post, user_id) VALUES (?, ?)", p.Post, p.User_id)
+	results, err := db.Query("INSERT INTO posts(post, user_id) VALUES (?, ?)", p.Post, p.User_id)
 
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Print(res)
+	res := []posts{}
+	for results.Next() {
+		var p posts
+		err = results.Scan(&p.Post, &p.User_id)
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		res = append(res, p)
+	}
+
+	json.NewEncoder(w).Encode(res)
 }
 
 func getUserData(w http.ResponseWriter, r *http.Request) {
@@ -111,9 +121,21 @@ func getUserData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func getPosts(db *sql.DB, id int) {
+func getPosts(w http.ResponseWriter, r *http.Request) {
+	db, dbErr := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/facebookdb?parseTime=true")
+	if dbErr != nil {
+		panic(dbErr.Error())
+	}
+	defer db.Close()
+	var u users
+	err := json.NewDecoder(r.Body).Decode(&u)
+	if err != nil {
+		// If the structure of the body is wrong, return an HTTP error
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	res, err := db.Query("SELECT DISTINCT posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture FROM posts JOIN users ON posts.user_id = users.id JOIN friendships ON (posts.user_id = friendships.sender OR posts.user_id = friendships.receiver) WHERE(friendships.sender = ? OR friendships.receiver = ?) AND friendships.accepted = 1 AND users.id NOT IN (SELECT blocks.receiver FROM blocks WHERE blocks.receiver = ? OR blocks.sender = ?) ORDER BY timestamp DESC;", id, id, id, id)
+	res, err := db.Query("SELECT DISTINCT posts.post, posts.timestamp, posts.user_id, users.first_name, users.last_name, users.picture FROM posts JOIN users ON posts.user_id = users.id JOIN friendships ON (posts.user_id = friendships.sender OR posts.user_id = friendships.receiver) WHERE(friendships.sender = ? OR friendships.receiver = ?) AND friendships.accepted = 1 AND users.id NOT IN (SELECT blocks.receiver FROM blocks WHERE blocks.receiver = ? OR blocks.sender = ?) ORDER BY timestamp DESC;", u.Id, u.Id, u.Id, u.Id)
 
 	if err != nil {
 		panic(err.Error())
